@@ -4,58 +4,68 @@ My loader BEFB (Berry Executable File Binary) for UBerryNix OS, dont fork it (�
 Structure
 ```
 MyDaemon.befb
-├── [0x0000] BEFB Header
-│   ├── Magic: "BEFBxyzA"
-│   ├── Version: uint16
-│   ├── Segment Count: uint16
-│   ├── Offset Segment Table: uint32
-│   ├── Offset Icon Table: uint32
-│   ├── Offset Manifest: uint32
-│   ├── Offset Signature Block: uint32
-│   └── Flags: uint16  → compressed/encrypted/secure/debuggable
-│
-├── [0x0020] Segment Table (N × 32 bytes)
-│   ├── Segment Name: char[8]    → ".text", ".data", etc
-│   ├── Segment Type: uint8      → enum (1=TEXT, 2=DATA, 3=RODATA, 4=BSS, ...)
-│   ├── Flags: uint8             → bitmask: R/W/X
-│   ├── Align: uint8
-│   ├── Reserved: uint8
-│   ├── Offset: uint32           → lokasi di file
-│   ├── Size: uint32
-│   └── Reserved[12]
-│
-├── [0x0100+] Segment Data (raw binary)
-│   ├── .text      → binary code
-│   ├── .data      → static data
-│   ├── .rodata    → const data
-│   └── others     → bisa juga .tls, .meta, dll
-│
-├── [opt] Icon Table (N × 24 bytes)
-│   ├── Type: uint8 (PNG=1, SVG=2, Animated=3)
-│   ├── Resolution: uint16
-│   ├── Offset: uint32
-│   ├── Size: uint32
-│   └── Reserved/Padding
-│
-├── [opt] Icon Blob Data
-│   ├── icon_32.png
-│   ├── icon_64.png
-│   └── icon_vector.svg
-│
-├── [opt] `manifest.abbm`
-│   ├── Binary-encoded metadata (AppID, version, preload, hash table, ABI info)
-│   ├── Optional encryption
-│   └── Dapat dibaca via `abrt --inspect`
-│
-├── [opt] Signature Block
-│   ├── Magic: "BERRY_SIG"
-│   ├── Block Size
-│   ├── Public Key (DER)
-│   ├── Digital Signature (ECDSA/SHA256)
-│   └── Trust Anchor ID
-│
-└── [opt] EOF / Checksum
-    └── CRC32, SHA256 sum, "EOF0x00"
+[0x0000] BEFB Header
+├── Magic: "BEFB" (4 bytes)
+├── Version: uint16
+├── Segment Count: uint16
+├── Offset Segment Table: uint32
+├── Offset Icon Table: uint32
+├── Offset Manifest: uint32
+├── Offset Signature Block: uint32
+└── Flags: uint16             ← Bitflags: debuggable, secure, encrypted, compressed
+
+[0x0020] Segment Table (N × 32 bytes)
+Each segment entry contains:
+├── Name: char[8]            ← e.g., ".text", ".data"
+├── Type: uint8              ← ENUM: 1=TEXT, 2=DATA, 3=RODATA, 4=BSS, etc.
+├── Flags: uint8             ← R/W/X bitmask
+├── Alignment: uint8
+├── Reserved: uint8
+├── Offset in File: uint32
+├── Size in Bytes: uint32
+└── Reserved/Padding: [12 bytes]
+
+[0x0100+] Segment Binary Data (berrysegs/)
+├── .text                    ← Executable binary code
+├── .data                    ← Writable initialized values
+├── .rodata                  ← Static const values
+├── .bss                     ← Declared size only, no actual data in file
+├── .cherryreva              ← Virtual address fixup table
+├── .plugin                  ← Plugin binary/module symbols
+├── .dbgmap                  ← Optional debug trace section
+├── .register                ← Register entry info (.e.g RIP)
+└── .hash                    ← Per-segment SHA256 or custom checksum
+
+[optional offset] Icon Table (N × 24 bytes)
+Each icon entry:
+├── Type: uint8              ← PNG, SVG, Animated
+├── Resolution: uint16       ← e.g., 64, 128, 512
+├── Offset: uint32
+├── Size: uint32
+├── Reserved/Padding
+v
+
+[optional offset] icons/
+├── icon_32.png
+├── icon_64.png
+├── icon_vector.svg
+v
+
+[optional offset] manifest.abbm
+├── Binary metadata: AppID, Version, Arch, ABI, Required modules, Segment checksums
+├── Supports: Encryption, Preload rules, Execution policies
+v
+
+[optional offset] signature.absign
+├── Magic: "BERRY_SIG"
+├── Block Size
+├── Certificate (DER-encoded)
+├── Signature (ECDSA of hash table + manifest)
+├── Trusted Anchor / Vendor ID
+v
+
+[optional offset] .EOF
+└── CRC32 / SHA256 / Custom EOF Marker like "EOF0x00"
 ```
 
 My structure project 

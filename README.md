@@ -5,7 +5,7 @@ Structure
 ```
 MyDaemon.befb
 [0x0000] BEFB Header
-├── Magic: "BEFB" (4 bytes)
+├── Magic: "BEFBxyzA" (8 bytes)
 ├── Version: uint16
 ├── Segment Count: uint16
 ├── Offset Segment Table: uint32

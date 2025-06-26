@@ -1,6 +1,63 @@
 # BlueberryBinary_Loader
 My loader BEFB (Berry Executable File Binary) for UBerryNix OS, dont fork it (⁠´⁠∩⁠｡⁠•⁠ ⁠ᵕ⁠ ⁠•⁠｡⁠∩⁠`⁠)
 
+Structure
+```
+MyDaemon.befb
+├── [0x0000] BEFB Header
+│   ├── Magic: "BEFBxyzA"
+│   ├── Version: uint16
+│   ├── Segment Count: uint16
+│   ├── Offset Segment Table: uint32
+│   ├── Offset Icon Table: uint32
+│   ├── Offset Manifest: uint32
+│   ├── Offset Signature Block: uint32
+│   └── Flags: uint16  → compressed/encrypted/secure/debuggable
+│
+├── [0x0020] Segment Table (N × 32 bytes)
+│   ├── Segment Name: char[8]    → ".text", ".data", etc
+│   ├── Segment Type: uint8      → enum (1=TEXT, 2=DATA, 3=RODATA, 4=BSS, ...)
+│   ├── Flags: uint8             → bitmask: R/W/X
+│   ├── Align: uint8
+│   ├── Reserved: uint8
+│   ├── Offset: uint32           → lokasi di file
+│   ├── Size: uint32
+│   └── Reserved[12]
+│
+├── [0x0100+] Segment Data (raw binary)
+│   ├── .text      → binary code
+│   ├── .data      → static data
+│   ├── .rodata    → const data
+│   └── others     → bisa juga .tls, .meta, dll
+│
+├── [opt] Icon Table (N × 24 bytes)
+│   ├── Type: uint8 (PNG=1, SVG=2, Animated=3)
+│   ├── Resolution: uint16
+│   ├── Offset: uint32
+│   ├── Size: uint32
+│   └── Reserved/Padding
+│
+├── [opt] Icon Blob Data
+│   ├── icon_32.png
+│   ├── icon_64.png
+│   └── icon_vector.svg
+│
+├── [opt] `manifest.abbm`
+│   ├── Binary-encoded metadata (AppID, version, preload, hash table, ABI info)
+│   ├── Optional encryption
+│   └── Dapat dibaca via `abrt --inspect`
+│
+├── [opt] Signature Block
+│   ├── Magic: "BERRY_SIG"
+│   ├── Block Size
+│   ├── Public Key (DER)
+│   ├── Digital Signature (ECDSA/SHA256)
+│   └── Trust Anchor ID
+│
+└── [opt] EOF / Checksum
+    └── CRC32, SHA256 sum, "EOF0x00"
+```
+
 My structure project 
 ```
 ├── include/                # Public BEFB headers (.h)
